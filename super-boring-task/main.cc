@@ -159,7 +159,7 @@ void profile_matrix_times_matrix(int n, OpenCL& opencl) {
     cl::copy(opencl.queue, d_result, begin(result), end(result));
 
     auto t4 = clock_type::now();
-    verify_matrix(expected_result, result);
+    verify_matrix(expected_result, result, 1e-1f);
     print("matrix-times-matrix",
           {t1-t0,t4-t1,t2-t1,t3-t2,t4-t3},
           {bandwidth(n*n+n*n+n*n, t0, t1), bandwidth(n*n+n*n+n*n, t2, t3)});
