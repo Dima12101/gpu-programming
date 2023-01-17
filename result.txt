@@ -1,0 +1,8 @@
+dima12101gpu@gpulab1 ~/labs/gpu-programming/super-boring-task$ ./build/super-boring-task
+Platform name: NVIDIA CUDA
+Device name: NVIDIA GeForce GTX 1060 6GB
+           function              OpenMP        OpenCL total      OpenCL copy-in       OpenCL kernel     OpenCL copy-out    OpenMP bandwidth    OpenCL bandwidth
+vector-times-vector             14278us            108143us             76663us               310us             31169us         26.4384GB/s          1217.7GB/s
+matrix-times-vector             46752us            405951us            391685us                26us             14239us         26.9194GB/s         48405.3GB/s
+BL_SIZE 32
+matrix-times-matrix           1422376us             16900us              8658us              5176us              3065us       0.0265392GB/s         7.29303GB/s
