@@ -1,0 +1,33 @@
+dima12101gpu@gpulab1 ~/labs/gpu-programming/reduce-scan$ ./build/reduce-scan 
+Platform name: NVIDIA CUDA
+Device name: NVIDIA GeForce GTX 1060 6GB
+           function              OpenMP        OpenCL total      OpenCL copy-in       OpenCL kernel     OpenCL copy-out    OpenMP bandwidth    OpenCL bandwidth
+Abs error: 18.5
+             reduce              4569us             40972us             38159us              1835us               978us         55.0795GB/s         137.143GB/s
+Result: 5.24403e+06; Expected result: 5.24405e+06; Abs error: 18.5
+     scan-inclusive             12583us             69200us             38325us             17374us             13500us               0GB/s               0GB/s
+1.09201 1.09201 0
+1.3097 1.3097 0
+2.56097 2.56097 0
+4.48044 4.48044 4.76837e-07
+8.3857 8.3857 0
+15.8122 15.8122 0
+31.4344 31.4344 1.90735e-06
+57.1254 57.1254 3.8147e-06
+119.127 119.127 0
+241.248 241.248 4.57764e-05
+500.119 500.119 9.15527e-05
+1031.65 1031.65 0.000488281
+2072.41 2072.41 0.00146484
+4153.4 4153.39 0.00341797
+8251.24 8251.24 0.0078125
+16453.1 16453 0.0644531
+32870.4 32870.5 0.113281
+65686 65685.8 0.171875
+131307 131307 0.15625
+262316 262316 0.03125
+524319 524313 6.25
+1.04869e+06 1.04868e+06 9.25
+2.0975e+06 2.09751e+06 14.25
+4.19446e+06 4.19428e+06 181.5
+5.24328e+06 5.24321e+06 77.5
