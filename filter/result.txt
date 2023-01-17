@@ -1,0 +1,5 @@
+dima12101gpu@gpulab1 ~/labs/gpu-programming/filter$ ./build/filter 
+Platform name: NVIDIA CUDA
+Device name: NVIDIA GeForce GTX 1060 6GB
+           function              OpenMP        OpenCL total      OpenCL copy-in       OpenCL kernel     OpenCL copy-out
+             filter             18899us             17610us              7973us              1349us              8286us
