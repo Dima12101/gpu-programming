@@ -70,7 +70,8 @@ void ray_tracing_cpu() {
     using std::chrono::duration_cast;
     using std::chrono::seconds;
     using std::chrono::microseconds;
-    int nx = 600, ny = 400, nrays = 100;
+    int nx = 800, ny = 600, nrays = 100;
+    
     Pixel_matrix<float> pixels(nx,ny);
     thx::screen_recorder recorder("out.ogv", nx,ny);
     Object_group objects;
@@ -121,16 +122,15 @@ void ray_tracing_gpu(OpenCL& opencl) {
     opencl.queue.flush();
     using std::chrono::duration_cast;
     using std::chrono::seconds;
-    using std::chrono::milliseconds;
     using std::chrono::microseconds;
-    int nx = 600, ny = 400, nrays = 100;
+    int nx = 800, ny = 600, nrays = 100;
     Pixel_matrix<float> pixels(nx,ny);
     thx::screen_recorder recorder("out.ogv", nx,ny);
     std::vector<Sphere> objects = {
         Sphere{vec(0.f,0.f,-1.f),0.5f},
         Sphere{vec(0.f,-1000.5f,-1.f),1000.f}
     };
-    Camera camera;
+
     uniform_distribution distribution(0.f,1.f);
     float gamma = 2;
     const int max_time_step = 60;
@@ -197,11 +197,12 @@ void ray_tracing_gpu(OpenCL& opencl) {
 
         opencl.queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(ny, nx), cl::NullRange);
         opencl.queue.flush();
+        // move camera a bit
+        opencl.queue.enqueueNDRangeKernel(move_camera_kernel, cl::NullRange, cl::NDRange(1), cl::NullRange);
+        opencl.queue.flush();
 
         opencl.queue.enqueueReadBuffer(d_result, true, 0, 3*nx*ny*sizeof(float), (float*)(pixels.pixels().data()));
         opencl.queue.finish();
-
-        // TODO Use GPU to race sun rays!
         auto t1 = clock_type::now();
         const auto dt = duration_cast<microseconds>(t1-t0);
         total_time += dt;
@@ -213,13 +214,10 @@ void ray_tracing_gpu(OpenCL& opencl) {
         std::ofstream out("out.ppm");
         out << pixels;
         recorder.record_frame(pixels);
-        camera.move(vec{0.f,0.f,0.1f});
     }
-
-    int total_time_ms = duration_cast<milliseconds>(total_time).count();
-    std::clog << "Ray-tracing time: " << total_time_ms/1000 << "." << total_time_ms%1000
-        << "s." << std::endl;
-    std::clog << "Movie time: " << max_time_step/60.f << "s." << std::endl;
+    std::clog << "Ray-tracing time: " << duration_cast<seconds>(total_time).count()
+        << "s" << std::endl;
+    std::clog << "Movie time: " << max_time_step/60.f << "s" << std::endl;
 }
 
 const std::string kernelsmykernels = R"(
