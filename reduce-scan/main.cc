@@ -93,6 +93,7 @@ void profile_reduce(int n, OpenCL& opencl) {
       cl::Buffer d_result(opencl.context, CL_MEM_READ_WRITE, vec_size*sizeof(float));
       kernel.setArg(1, d_result);
       kernel.setArg(2, vec_size*1024);
+      kernel.setArg(3, 1024*sizeof(float), NULL);
       opencl.queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(vec_size*1024), cl::NDRange(1024));
       current_vec = d_result;
       last_vec_size = vec_size;
@@ -103,6 +104,7 @@ void profile_reduce(int n, OpenCL& opencl) {
       cl::Buffer d_result(opencl.context, CL_MEM_READ_WRITE, sizeof(float));
       kernel.setArg(1, d_result);
       kernel.setArg(2, last_vec_size);
+      kernel.setArg(3, last_vec_size*sizeof(float), NULL);
       opencl.queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(last_vec_size), cl::NDRange(last_vec_size));
       current_vec = d_result;
     }
@@ -113,11 +115,11 @@ void profile_reduce(int n, OpenCL& opencl) {
     cl::copy(opencl.queue, current_vec, begin(v_result), end(v_result));
     result = v_result[0];
     auto t4 = clock_type::now();
-
-    std::cout << "Abs error: "  << std::abs(result - expected_result) << "\n";
+    
     print("reduce",
           {t1-t0,t4-t1,t2-t1,t3-t2,t4-t3},
           {bandwidth(n*n+n+n, t0, t1), bandwidth(n*n+n+n, t2, t3)});
+    std::cout << "Result: " << result << "; Expected result: " << expected_result << "; Abs error: " << std::abs(result - expected_result) << "\n";
 }
 
 void profile_scan_inclusive(int n, OpenCL& opencl) {
@@ -136,18 +138,18 @@ void profile_scan_inclusive(int n, OpenCL& opencl) {
 
     auto t2 = clock_type::now();
     kernel.setArg(0, d_a);
-    kernel.setArg(1, d_a);
-    kernel.setArg(2, 1);
+    kernel.setArg(1, 1);
+    kernel.setArg(2, 1024*sizeof(float), NULL);
     opencl.queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(n), cl::NDRange(1024));
 
     kernel.setArg(0, d_a);
-    kernel.setArg(1, d_a);
-    kernel.setArg(2, 1*1024);
+    kernel.setArg(1, 1*1024);
+    kernel.setArg(2, 1024*sizeof(float), NULL);
     opencl.queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(n/1024), cl::NDRange(1024));
 
     kernel.setArg(0, d_a);
-    kernel.setArg(1, d_a);
-    kernel.setArg(2, 1*1024*1024);
+    kernel.setArg(1, 1*1024*1024);
+    kernel.setArg(2, 1024*sizeof(float), NULL);
     opencl.queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(n/(1024*1024)), cl::NDRange(10));
 
     kernel_fin.setArg(0, d_a);
@@ -179,10 +181,10 @@ void opencl_main(OpenCL& opencl) {
 const std::string src = R"(
 kernel void reduce(global float* a,
                    global float* result,
-                   int n) {
+                   int n,
+                   local float* group_part) {
     const int i = get_global_id(0);
     const int local_i = get_local_id(0);
-    local float group_part[1024];
     if (n < 1024) {
       if (i == 0) {
           group_part[0] = 0;
@@ -204,12 +206,11 @@ kernel void reduce(global float* a,
 }
 
 kernel void scan_inclusive(global float* a,
-                           global float* result,
-                           int a_step) {
+                           int a_step,
+                           local float* group_part) {
     const int i = get_global_id(0);
     const int local_i = get_local_id(0);
     const int local_size = get_local_size(0);
-    local float group_part[1024];
     group_part[local_i] = a[(a_step-1) + i*a_step];
     barrier(CLK_LOCAL_MEM_FENCE);
 
