@@ -36,12 +36,12 @@ void print(const char* name, std::array<duration,5> dt, std::array<double,2> bw)
     std::cout << std::setw(19) << name;
     for (size_t i=0; i<5; ++i) {
         std::stringstream tmp;
-        tmp << duration_cast<microseconds>(dt[i]).count() << "us";
+        tmp << duration_cast<microseconds>(dt[i]).count() << " us";
         std::cout << std::setw(20) << tmp.str();
     }
     for (size_t i=0; i<2; ++i) {
         std::stringstream tmp;
-        tmp << bw[i] << "GB/s";
+        tmp << bw[i] << " GB/s";
         std::cout << std::setw(20) << tmp.str();
     }
     std::cout << '\n';
@@ -70,16 +70,19 @@ struct OpenCL {
 void profile_reduce(int n, OpenCL& opencl) {
     auto a = random_vector<float>(n);
     float result = 0, expected_result = 0;
-    
+    float solid_truth = 0;
+    for (int k = 0; k < n; k++) {
+      solid_truth += a[k];
+    }
+
     opencl.queue.flush();
     cl::Kernel kernel(opencl.program, "reduce");
-
     auto t0 = clock_type::now();
     expected_result = reduce(a);
-
     auto t1 = clock_type::now();
     Vector<float> v_result(1);
     cl::Buffer d_a(opencl.queue, begin(a), end(a), true);
+
     opencl.queue.finish();
 
     auto t2 = clock_type::now();
@@ -109,13 +112,12 @@ void profile_reduce(int n, OpenCL& opencl) {
     auto t3 = clock_type::now();
     cl::copy(opencl.queue, current_vec, begin(v_result), end(v_result));
     result = v_result[0];
-
     auto t4 = clock_type::now();
+
     std::cout << "Abs error: "  << std::abs(result - expected_result) << "\n";
     print("reduce",
           {t1-t0,t4-t1,t2-t1,t3-t2,t4-t3},
           {bandwidth(n*n+n+n, t0, t1), bandwidth(n*n+n+n, t2, t3)});
-    std::cout << "Result: " << result << "; Expected result: " << expected_result << "; Abs error: "  << std::abs(result - expected_result) << "\n";
 }
 
 void profile_scan_inclusive(int n, OpenCL& opencl) {
@@ -153,19 +155,18 @@ void profile_scan_inclusive(int n, OpenCL& opencl) {
     opencl.queue.enqueueNDRangeKernel(kernel_fin, cl::NullRange, cl::NDRange(n/1024 - 1), cl::NullRange);
 
     opencl.queue.finish();
-
+    std::cout << "GPU FINISHED" << '\n';
     auto t3 = clock_type::now();
     cl::copy(opencl.queue, d_a, begin(result), end(result));
-
     auto t4 = clock_type::now();
-    print("scan-inclusive",
-          {t1-t0,t4-t1,t2-t1,t3-t2,t4-t3},
-          {bandwidth(n*n+n*n+n*n, t0, t1), bandwidth(n*n+n*n+n*n, t2, t3)});
-
     for (int k = 1; k < n; k *= 2) {
       std::cout << result[k] << ' ' << expected_result[k] << ' ' << std::abs(result[k] - expected_result[k]) << '\n';
     }
     std::cout << result[1024*1024*10 - 1] << ' ' << expected_result[1024*1024*10 - 1] << ' ' << std::abs(result[1024*1024*10 - 1] - expected_result[1024*1024*10 -1]) << '\n';
+
+    print("scan-inclusive",
+          {t1-t0,t4-t1,t2-t1,t3-t2,t4-t3},
+          {bandwidth(n*n+n*n+n*n, t0, t1), bandwidth(n*n+n*n+n*n, t2, t3)});
 }
 
 void opencl_main(OpenCL& opencl) {
@@ -179,7 +180,6 @@ const std::string src = R"(
 kernel void reduce(global float* a,
                    global float* result,
                    int n) {
-    // TODO: Implement OpenCL version.
     const int i = get_global_id(0);
     const int local_i = get_local_id(0);
     local float group_part[1024];
@@ -206,7 +206,6 @@ kernel void reduce(global float* a,
 kernel void scan_inclusive(global float* a,
                            global float* result,
                            int a_step) {
-    // TODO: Implement OpenCL version.
     const int i = get_global_id(0);
     const int local_i = get_local_id(0);
     const int local_size = get_local_size(0);
