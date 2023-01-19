@@ -72,11 +72,20 @@ std::default_random_engine make_prng() {
     return prng;
 }
 
-template <class T> Vector<T>
+// template <class T> Vector<T>
+// random_vector(int n) {
+//     auto prng = make_prng();
+//     Vector<T> v(n);
+//     std::uniform_real_distribution<T> dist(T{0}, T{1});
+//     for (int i=0; i<n; ++i) { v(i) = dist(prng); }
+//     return v;
+// }
+
+Vector<int>
 random_vector(int n) {
     auto prng = make_prng();
-    Vector<T> v(n);
-    std::uniform_real_distribution<T> dist(T{0}, T{1});
+    Vector<int> v(n);
+    std::uniform_int_distribution<int> dist(1, 30);
     for (int i=0; i<n; ++i) { v(i) = dist(prng); }
     return v;
 }
