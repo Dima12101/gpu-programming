@@ -89,8 +89,8 @@ void generate_particles() {
     float step = 1.5f*kernel_radius;
     for (float x=x0; x<x1; x+=step) {
         for (float y=y0; y<y1; y+=step) {
-            particles.emplace_back(vec2{x+dist_x(prng),y+dist_y(prng)});       
-            }
+            particles.emplace_back(vec2{x+dist_x(prng),y+dist_y(prng)});
+        }
     }
     std::clog << "No. of particles: " << particles.size() << std::endl;
 }
@@ -119,12 +119,12 @@ void generate_particles_OpenCl() {
     float y1 = window_height*1.00f;
     float step = 1.5f*kernel_radius;
 
-    for (float x=x0; x<x1; x+=step) {
-        for (float y=y0; y<y1; y+=step) {
+    for (float x = x0; x < x1; x += step) {
+        for (float y = y0; y < y1; y += step) {
             particles_GPU.positions_plain.push_back(x + dist_x(prng));
             particles_GPU.positions_plain.push_back(y + dist_y(prng));
-            particles_GPU.count++;        
-            }
+            particles_GPU.count++;
+        }
     }
     std::clog << "No. of particles: " << particles_GPU.count << std::endl;
 
@@ -262,7 +262,7 @@ void on_idle_gpu() {
 
     int count = particles_GPU.count;
     auto t0 = clock_type::now();
-    
+
     density_kernel.setArg(0, buffers.positions_buf);
     density_kernel.setArg(1, buffers.densities_buf);
     density_kernel.setArg(2, buffers.pressures_buf);
@@ -458,7 +458,7 @@ void start_gpu() {
             throw;
         }
         cl::CommandQueue queue(context, device);
-        OpenCL opencl{platform, device, context, program, queue};
+        opencl = OpenCL{platform, device, context, program, queue};
 
     } catch (const cl::Error& err) {
         std::cerr << "OpenCL error in " << err.what() << '(' << err.err() << ")\n";
@@ -475,6 +475,7 @@ void start_gpu() {
 
 int main(int argc, char* argv[]) {
 
+    version = Version::CPU;
     if (argc == 2) {
         std::string str(argv[1]);
         for (auto& ch : str) { ch = std::tolower(ch); }
